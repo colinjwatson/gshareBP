@@ -106,21 +106,35 @@ int main() {
 
 	}
 
-	// print outputs console
-	char predictionStr[] = "number of prediction:";
-	char mispredictionStr[] = "number of mispredictions:";
-	char rateStr[] = "misprediction rate:";
-	printf("\nOUTPUT\n");
-	printf("\t%-30s %-30d\n", predictionStr, branches);
-	printf("\t%-30s %-30d\n", mispredictionStr, miss);
-	printf("\t%-30s %-5.*f%%\n\n", rateStr, 2, 100 * (float)miss / branches);
-	char indexStr[] = "INDEX";
-	char bimodalStr[] = "BIMODAL";
-	printf("%-10s\t%-10s\n", indexStr, bimodalStr);
-	for (int i = 0; i < SIZE; i++) {
-		printf("%-10d\t%-10d\n", i, buffer[i]);
-	}
+	// print outputs to file
+	FILE* output;
+	char outputFile[] = "output.txt";
 
+	printf("\nOutputs stored in: %s\n", outputFile);
+
+	if ((err = fopen_s(&output, outputFile, "w")) != 0) {
+		// File could not be opened
+		// print error message to stderr
+		fprintf(stderr, "cannot create file '%s': %s\n", outputFile, strerror(err));
+		exit(0);
+	}
+	else {
+		// File opened successfully
+		fprintf(output, "%s", "SIM\n");
+		fprintf(output, "\t%-30s %-30d\n", "m: ", M);
+		fprintf(output, "\t%-30s %-30d\n", "n: ", N);
+		fprintf(output, "\t%-30s %-30s\n\n", "trace file: ", fileName);
+		fprintf(output, "%s", "OUTPUT\n");
+		fprintf(output, "\t%-30s %-30d\n", "number of predictions:", branches);
+		fprintf(output, "\t%-30s %-30d\n", "number of mispredictions:", miss);
+		fprintf(output, "\t%-30s %-5.*f%%\n\n", "misprediction rate:", 2, 100 * (float)miss / branches);
+		fprintf(output, "%-10s\t%-10s\n", "INDEX", "BIMODAL");
+
+		for (int i = 0; i < SIZE; i++) {
+			fprintf(output, "%-10d\t%-10d\n", i, buffer[i]);
+		}
+	}
+	
 	free(buffer); // deallocate memory 
 
 	return 0;
