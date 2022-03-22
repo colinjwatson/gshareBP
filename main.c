@@ -9,7 +9,11 @@ int main() {
 	char fileName[30];
 	errno_t err;
 
-	// gshare parameters
+	// print outputs to file
+	FILE* output;
+	char outputFile[30];
+
+	// simulation parameters
 	const int M; // number of low order PC bits used for indexing prediction table
 	const int N; // number of bits in global branch history register
 
@@ -107,10 +111,9 @@ int main() {
 	}
 
 	// print outputs to file
-	FILE* output;
-	char outputFile[] = "output.txt";
-
-	printf("\nOutputs stored in: %s\n", outputFile);
+	printf("\nSimulation done...\nEnter name of output file: ");
+	scanf("%s", &outputFile);
+	printf("\nOutput stored in: %s\n", outputFile);
 
 	if ((err = fopen_s(&output, outputFile, "w")) != 0) {
 		// File could not be opened
@@ -120,18 +123,23 @@ int main() {
 	}
 	else {
 		// File opened successfully
-		fprintf(output, "%s", "SIM\n");
-		fprintf(output, "\t%-30s %-30d\n", "m: ", M);
-		fprintf(output, "\t%-30s %-30d\n", "n: ", N);
-		fprintf(output, "\t%-30s %-30s\n\n", "trace file: ", fileName);
+		fprintf(output, "%s", "COMMAND\n");
+
+		if (N > 0) {
+			fprintf(output, "\t%s %d %d %s\n", "sim gshare", M, N, fileName);
+		}
+		else {
+			fprintf(output, "\t%s %d %s\n", "sim bimodal", M, fileName);
+		}
+
 		fprintf(output, "%s", "OUTPUT\n");
 		fprintf(output, "\t%-30s %-30d\n", "number of predictions:", branches);
 		fprintf(output, "\t%-30s %-30d\n", "number of mispredictions:", miss);
-		fprintf(output, "\t%-30s %-5.*f%%\n\n", "misprediction rate:", 2, 100 * (float)miss / branches);
-		fprintf(output, "%-10s\t%-10s\n", "INDEX", "BIMODAL");
+		fprintf(output, "\t%-30s %-5.*f%%\n", "misprediction rate:", 2, 100 * (float)miss / branches);
+		fprintf(output, "%-10s %-10s %-10s\n", "FINAL", (N > 0) ? "GSHARE" : "BIMODAL", "CONTENTS");
 
 		for (int i = 0; i < SIZE; i++) {
-			fprintf(output, "%-10d\t%-10d\n", i, buffer[i]);
+			fprintf(output, "%-10d %-10d\n", i, buffer[i]);
 		}
 	}
 	
