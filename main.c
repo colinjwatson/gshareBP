@@ -6,7 +6,7 @@
 int main() {
 	// variables for opening trace file
 	FILE* trace;
-	char fileName[30];
+	char traceFile[30];
 	errno_t err;
 
 	// print outputs to file
@@ -23,7 +23,7 @@ int main() {
 	printf("Enter integer value for n: ");
 	scanf("%i", &N);
 	printf("Enter name of trace file: ");
-	scanf("%s", &fileName);
+	scanf("%s", &traceFile);
 
 	// more branch predictor model parameters
 	unsigned long int pc; // holds adress of branch instruction
@@ -37,9 +37,9 @@ int main() {
 	int gr = 0; // global branch history register initialized to zero
 	int grTemp; // temp var for holding upper N bits of index
 
-	int* buffer = (int*)malloc(SIZE * sizeof(int)); // prediction table array holds 2^M ints
+	int* table = (int*)malloc(SIZE * sizeof(int)); // prediction table array holds 2^M ints
 
-	if (buffer == NULL) {
+	if (table == NULL) {
 		// malloc returns NULL if memory cannot be allocated
 		printf("Error: memory could not be allocated for prediction table\n");
 		exit(0);
@@ -47,13 +47,13 @@ int main() {
 
 	// initialize all prediction table entries to 2
 	for (int i = 0; i < SIZE; i++) {
-		buffer[i] = 2;
+		table[i] = 2;
 	}
 
-	if ((err = fopen_s(&trace, fileName, "r")) != 0) {
+	if ((err = fopen_s(&trace, traceFile, "r")) != 0) {
 		// File could not be opened
 		// print error message to stderr
-		fprintf(stderr, "cannot open file '%s': %s\n", fileName, strerror(err));
+		fprintf(stderr, "cannot open file '%s': %s\n", traceFile, strerror(err));
 		exit(0);
 	}
 	else {
@@ -71,15 +71,15 @@ int main() {
 				grTemp = grTemp << M - N; // needed for later to form index
 				index = (index & indexBM) | grTemp;
 			}
-			
+
 			if (actual == 't') { // if actual branch outcome is taken
-				if (buffer[index] == 3 || buffer[index] == 2) { // prediction == actual
-					if (buffer[index] == 2) {
-						buffer[index]++;
+				if (table[index] == 3 || table[index] == 2) { // prediction == actual
+					if (table[index] == 2) {
+						table[index]++;
 					}
 				}
 				else { // prediction =/= actual
-					buffer[index]++;
+					table[index]++;
 					miss++;
 				}
 
@@ -89,13 +89,13 @@ int main() {
 				}
 			}
 			else { // if actual branch outcome is not taken
-				if (buffer[index] == 3 || buffer[index] == 2) { // prediction =/= actual
-					buffer[index]--;
+				if (table[index] == 3 || table[index] == 2) { // prediction =/= actual
+					table[index]--;
 					miss++;
 				}
 				else { // prediction == actual
-					if (buffer[index] == 1) {
-						buffer[index]--;
+					if (table[index] == 1) {
+						table[index]--;
 					}
 				}
 
@@ -126,10 +126,10 @@ int main() {
 		fprintf(output, "%s", "COMMAND\n");
 
 		if (N > 0) {
-			fprintf(output, "\t%s %d %d %s\n", "sim gshare", M, N, fileName);
+			fprintf(output, "\t%s %d %d %s\n", "sim gshare", M, N, traceFile);
 		}
 		else {
-			fprintf(output, "\t%s %d %s\n", "sim bimodal", M, fileName);
+			fprintf(output, "\t%s %d %s\n", "sim bimodal", M, traceFile);
 		}
 
 		fprintf(output, "%s", "OUTPUT\n");
@@ -139,11 +139,14 @@ int main() {
 		fprintf(output, "%-10s %-10s %-10s\n", "FINAL", (N > 0) ? "GSHARE" : "BIMODAL", "CONTENTS");
 
 		for (int i = 0; i < SIZE; i++) {
-			fprintf(output, "%-10d %-10d\n", i, buffer[i]);
+			fprintf(output, "%-10d %-10d\n", i, table[i]);
 		}
 	}
-	
-	free(buffer); // deallocate memory 
+
+	fclose(trace); // close files
+	fclose(output);
+
+	free(table); // deallocate memory 
 
 	return 0;
 }
